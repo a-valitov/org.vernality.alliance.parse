@@ -48,7 +48,7 @@ var dashboard = new ParseDashboard({
         [
             {
                 "user":"rinat",
-                "pass":"AllianceBear1",
+                "pass":"AllianceFox1",
                 "apps": [{"appId": "org.vernality.alliance"}]
             }
         ]
