@@ -78,4 +78,4 @@ httpsServer.listen(port, function() {
 });
 
 // This will enable the Live Query real-time server
-ParseServer.createLiveQueryServer(httpServer);
+ParseServer.createLiveQueryServer(httpsServer);
