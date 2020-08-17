@@ -27,7 +27,7 @@ var api = new ParseServer({
     cloud: process.env.CLOUD_CODE_MAIN || __dirname + '/cloud/main.js',
     appId: process.env.APP_ID || 'org.vernality.alliance',
     masterKey: process.env.MASTER_KEY || 'n2vw8wfMsrm4jDSuLMuspiiseBwOIq18rsq6uQ5p', //Add your master key here. Keep it secret!
-    serverURL: process.env.SERVER_URL || 'https://localhost/parse',  // Don't forget to change to https if needed
+    serverURL: process.env.SERVER_URL || 'https://alliance.vernality.net:1337/parse',  // Don't forget to change to https if needed
     liveQuery: {
         classNames: [] // List of classes to support for query subscriptions
     }
@@ -38,7 +38,7 @@ var options = { allowInsecureHTTP: false };
 var dashboard = new ParseDashboard({
     "apps": [
         {
-            "serverURL": "https://localhost/parse",
+            "serverURL": "https://alliance.vernality.net:1337/parse",
             "appId": "org.vernality.alliance",
             "masterKey": "n2vw8wfMsrm4jDSuLMuspiiseBwOIq18rsq6uQ5p",
             "appName": "Alliance"
