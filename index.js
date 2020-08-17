@@ -73,7 +73,7 @@ app.use('/dashboard', dashboard);
 var port = process.env.PORT || 1337;
 var httpsServer = https.createServer(credentials, app);
 
-httpServer.listen(port, function() {
+httpsServer.listen(port, function() {
     console.log('parse-server-example running on port ' + port + '.');
 });
 
