@@ -27,7 +27,8 @@ var api = new ParseServer({
     cloud: process.env.CLOUD_CODE_MAIN || __dirname + '/cloud/main.js',
     appId: process.env.APP_ID || 'org.vernality.alliance',
     masterKey: process.env.MASTER_KEY || 'n2vw8wfMsrm4jDSuLMuspiiseBwOIq18rsq6uQ5p', //Add your master key here. Keep it secret!
-    serverURL: process.env.SERVER_URL || 'https://alliance.vernality.net:1337/parse',  // Don't forget to change to https if needed
+    serverURL: process.env.SERVER_URL || 'https://alliance.vernality.net/parse',  // Don't forget to change to https if needed
+    publicServerURL: 'https://alliance.vernality.net/parse'
     clientKey: 'hWlREY7dvWb7sLpCVfZrReWNKPHh4uJT',
     liveQuery: {
         classNames: [] // List of classes to support for query subscriptions
@@ -48,8 +49,13 @@ var dashboard = new ParseDashboard({
     "users":
         [
             {
-                "user":"rinat",
-                "pass":"AllianceFox1",
+                "user": "rinat",
+                "pass": "AllianceFox1",
+                "apps": [{"appId": "org.vernality.alliance"}]
+            },
+            {
+                "user": "temur",
+                "pass": "TemurFox1",
                 "apps": [{"appId": "org.vernality.alliance"}]
             }
         ]
