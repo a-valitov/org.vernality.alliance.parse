@@ -28,7 +28,7 @@ var api = new ParseServer({
     appId: process.env.APP_ID || 'org.vernality.alliance',
     masterKey: process.env.MASTER_KEY || 'n2vw8wfMsrm4jDSuLMuspiiseBwOIq18rsq6uQ5p', //Add your master key here. Keep it secret!
     serverURL: process.env.SERVER_URL || 'https://alliance.vernality.net/parse',  // Don't forget to change to https if needed
-    publicServerURL: 'https://alliance.vernality.net/parse'
+    publicServerURL: 'https://alliance.vernality.net/parse',
     clientKey: 'hWlREY7dvWb7sLpCVfZrReWNKPHh4uJT',
     liveQuery: {
         classNames: [] // List of classes to support for query subscriptions
