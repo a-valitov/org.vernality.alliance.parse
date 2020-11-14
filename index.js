@@ -32,6 +32,15 @@ var api = new ParseServer({
     clientKey: 'hWlREY7dvWb7sLpCVfZrReWNKPHh4uJT',
     liveQuery: {
         classNames: [] // List of classes to support for query subscriptions
+    },
+    appName: "ProfitClub",
+    emailAdapter: {
+        module: "parse-server-generic-email-adapter",
+        options: {
+            service: "Yandex",
+            email: "profitclub@vernality.org",
+            password: "AynurFox1"
+        }
     }
 });
 
