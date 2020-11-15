@@ -42,7 +42,8 @@ var api = new ParseServer({
             email: "profitclub@vernality.org",
             password: "AynurFox1"
         }
-    }
+    },
+    verifyUserEmails: true
 });
 
 var options = { allowInsecureHTTP: false };
