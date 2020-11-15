@@ -38,6 +38,7 @@ var api = new ParseServer({
         module: "parse-server-generic-email-adapter",
         options: {
             service: "Yandex",
+            from: "profitclub@vernality.org",
             email: "profitclub@vernality.org",
             password: "AynurFox1"
         }
