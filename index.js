@@ -13,13 +13,15 @@ if(DEVELOPMENT) {
 
 var databaseUri = process.env.DATABASE_URI || process.env.MONGODB_URI;
 
+var credentials = {};
+
 if(!DEVELOPMENT) {
     // Certificate
     const privateKey = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/privkey.pem', 'utf8');
     const certificate = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/cert.pem', 'utf8');
     const ca = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/chain.pem', 'utf8');
 
-    const credentials = {
+    credentials = {
         key: privateKey,
         cert: certificate,
         ca: ca
