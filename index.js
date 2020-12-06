@@ -4,19 +4,27 @@ var ParseDashboard = require('parse-dashboard');
 var path = require('path');
 const fs = require('fs');
 const https = require('https');
+const http = require('http');
+
+var DEVELOPMENT = process.env.DEVELOPMENT || false
+if(DEVELOPMENT) {
+    process.env.SERVER_URL = "http://127.0.0.1:1337/parse"
+}
 
 var databaseUri = process.env.DATABASE_URI || process.env.MONGODB_URI;
 
-// Certificate
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/cert.pem', 'utf8');
-const ca = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/chain.pem', 'utf8');
+if(!DEVELOPMENT) {
+    // Certificate
+    const privateKey = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/privkey.pem', 'utf8');
+    const certificate = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/cert.pem', 'utf8');
+    const ca = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/chain.pem', 'utf8');
 
-const credentials = {
-    key: privateKey,
-    cert: certificate,
-    ca: ca
-};
+    const credentials = {
+        key: privateKey,
+        cert: certificate,
+        ca: ca
+    };
+}
 
 if (!databaseUri) {
     console.log('DATABASE_URI not specified, falling back to localhost.');
@@ -28,7 +36,7 @@ var api = new ParseServer({
     appId: process.env.APP_ID || 'org.vernality.alliance',
     masterKey: process.env.MASTER_KEY || 'n2vw8wfMsrm4jDSuLMuspiiseBwOIq18rsq6uQ5p', //Add your master key here. Keep it secret!
     serverURL: process.env.SERVER_URL || 'https://alliance.vernality.net/parse',  // Don't forget to change to https if needed
-    publicServerURL: 'https://alliance.vernality.net/parse',
+    publicServerURL: process.env.SERVER_URL || 'https://alliance.vernality.net/parse',
     clientKey: 'hWlREY7dvWb7sLpCVfZrReWNKPHh4uJT',
     liveQuery: {
         classNames: [] // List of classes to support for query subscriptions
@@ -43,15 +51,20 @@ var api = new ParseServer({
             password: "AynurFox1"
         }
     },
-    verifyUserEmails: true
+    verifyUserEmails: true,
+    //allowClientClassCreation: false //FIXME: DON'T FORGET TO UNCOMMENT IN PRODUCTION
 });
-
-var options = { allowInsecureHTTP: false };
+var options = {};
+if(DEVELOPMENT) {
+    options = {allowInsecureHTTP: true};
+} else {
+    options = {allowInsecureHTTP: false};
+}
 
 var dashboard = new ParseDashboard({
     "apps": [
         {
-            "serverURL": "https://alliance.vernality.net:1337/parse",
+            "serverURL": process.env.SERVER_URL || "https://alliance.vernality.net:1337/parse",
             "appId": "org.vernality.alliance",
             "masterKey": "n2vw8wfMsrm4jDSuLMuspiiseBwOIq18rsq6uQ5p",
             "appName": "Alliance"
@@ -88,12 +101,24 @@ app.get('/', function(req, res) {
 // make the Parse Dashboard available at /dashboard
 app.use('/dashboard', dashboard);
 
-var port = process.env.PORT || 1337;
-var httpsServer = https.createServer(credentials, app);
+if(DEVELOPMENT) {
+    var port = process.env.PORT || 1337;
+    var httpServer = http.createServer(app);
 
-httpsServer.listen(port, function() {
-    console.log('parse-server-example running on port ' + port + '.');
-});
+    httpServer.listen(port, function () {
+        console.log('parse-server DEVELOPMENT running on port ' + port + '.');
+    });
 
-// This will enable the Live Query real-time server
-ParseServer.createLiveQueryServer(httpsServer);
+    // This will enable the Live Query real-time server
+    ParseServer.createLiveQueryServer(httpServer);
+} else {
+    var port = process.env.PORT || 1337;
+    var httpsServer = https.createServer(credentials, app);
+
+    httpsServer.listen(port, function () {
+        console.log('parse-server running on port ' + port + '.');
+    });
+
+    // This will enable the Live Query real-time server
+    ParseServer.createLiveQueryServer(httpsServer);
+}
