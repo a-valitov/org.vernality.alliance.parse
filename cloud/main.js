@@ -2,6 +2,32 @@ Parse.Cloud.define('hello', function(req, res) {
     return 'Hi';
 });
 
+Parse.Cloud.define("applyAsAMemberToOrganization", async (request) => {
+    let organizationId = request.params.organizationId;
+    let memberId = request.params.memberId;
+
+    const Organization = Parse.Object.extend("Organization");
+    const query = new Parse.Query(Organization);
+    query.get(organizationId, { useMasterKey: true })
+        .then((organization) => {
+            let members = organization.relation("members");
+            const Member = Parse.Object.extend("Member");
+            const query = new Parse.Query(Member);
+            query.get(memberId, { useMasterKey: true })
+                .then((member) => {
+                    members.add(member);
+                    organization.save(null, { useMasterKey: true });
+                    member.set("organization", organization)
+                    member.save(null, { useMasterKey: true });
+                })
+                .catch(function(error) {
+                    console.error(error);
+                });
+        }).catch(function(error) {
+            console.error(error);
+        });
+});
+
 //Supplier
 Parse.Cloud.beforeSave("Supplier", (request) => {
     var supplier = request.object;
