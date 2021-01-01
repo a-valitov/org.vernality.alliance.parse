@@ -38,6 +38,7 @@ Parse.Cloud.beforeSave("Supplier", (request) => {
     }
     //only 'onReview' state allowed on create
     supplier.set("statusString", "onReview");
+    supplier.set("owner", user)
 
     //set ACLs
     var acl = new Parse.ACL();
@@ -76,6 +77,7 @@ Parse.Cloud.beforeSave("Organization", (request) => {
     }
     //only 'onReview' state allowed on create
     organization.set("statusString", "onReview");
+    organization.set("owner", user)
 
     //set ACLs
     var acl = new Parse.ACL();
@@ -114,6 +116,7 @@ Parse.Cloud.beforeSave("Member", (request) => {
     }
     //only 'onReview' state allowed on create
     member.set("statusString", "onReview");
+    member.set("owner", user)
 
     //set ACLs
     var acl = new Parse.ACL();
