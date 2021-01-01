@@ -19,10 +19,10 @@ Parse.Cloud.define("applyAsAMemberToOrganization", async (request) => {
                     organization.save(null, { useMasterKey: true });
                     member.set("organization", organization)
                     member.save(null, { useMasterKey: true });
-                    var acl = member.acl;
-                    var organizationOwner = organization["owner"];
+                    var acl = member.getACL();
+                    var organizationOwner = organization.get("owner");
                     acl.setReadAccess(organizationOwner.id, true);
-                    member.set('ACL', acl);
+                    member.setACL(acl);
                 })
                 .catch(function(error) {
                     console.error(error);
