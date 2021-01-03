@@ -48,7 +48,7 @@ var api = new ParseServer({
         ios: [
             {
                 token: {
-                    key: '/keys/AuthKey_2WZ28N568X.p8',
+                    key: 'keys/AuthKey_2WZ28N568X.p8',
                     keyId: "2WZ28N568X",
                     teamId: "5V5EUT3ZXJ"
                 },
@@ -57,7 +57,7 @@ var api = new ParseServer({
             },
             {
                 token: {
-                    key: '/keys/AuthKey_2WZ28N568X.p8',
+                    key: 'keys/AuthKey_2WZ28N568X.p8',
                     keyId: "2WZ28N568X",
                     teamId: "5V5EUT3ZXJ"
                 },
