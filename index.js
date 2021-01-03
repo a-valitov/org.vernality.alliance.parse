@@ -44,6 +44,28 @@ var api = new ParseServer({
         classNames: [] // List of classes to support for query subscriptions
     },
     appName: "ProfitClub",
+    push: {
+        ios: [
+            {
+                token: {
+                    key: '/keys/AuthKey_2WZ28N568X.p8',
+                    keyId: "2WZ28N568X",
+                    teamId: "5V5EUT3ZXJ"
+                },
+                topic: 'org.vernality.profitclub',
+                production: false
+            },
+            {
+                token: {
+                    key: '/keys/AuthKey_2WZ28N568X.p8',
+                    keyId: "2WZ28N568X",
+                    teamId: "5V5EUT3ZXJ"
+                },
+                topic: 'org.vernality.profitclub',
+                production: true
+            }
+        ]
+    },
     emailAdapter: {
         module: "parse-server-generic-email-adapter",
         options: {
