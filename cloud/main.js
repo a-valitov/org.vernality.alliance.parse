@@ -109,6 +109,33 @@ Parse.Cloud.afterSave("Organization", (request) => {
         organizations.add(organization);
         user.save(null, { useMasterKey: true });
     }
+
+    // send PNs to admins
+    var query = new Parse.Query(Parse.Role);
+    query.equalTo("name", "administrator");
+    query.first({ useMasterKey: true }).then((role) => {
+        var relation = role.getUsers();
+        relation.query().find({ useMasterKey: true }).then((users) => {
+                var query = new Parse.Query(Parse.Installation);
+                query.containedIn('user', users);
+                Parse.Push.send({
+                    where: query,
+                    data: {
+                        alert: "Поступила заявка на вступление в клуб организации",
+                        name: "Заявка на вступление организации"
+                    }
+                }, { useMasterKey: true })
+                .then(function() {
+                    console.log("successful push");
+                }, function(error) {
+                    console.log(error);
+                });
+            }).catch(function(error) {
+                console.log(error);
+            });
+    }).catch(function(error) {
+        console.error(error);
+    });
 });
 
 //Member
