@@ -24,6 +24,22 @@ Parse.Cloud.define("applyAsAMemberToOrganization", async (request) => {
                     acl.setReadAccess(organizationOwner.id, true);
                     acl.setWriteAccess(organizationOwner.id, true);
                     member.setACL(acl);
+
+                    // send PNs to owner
+                    var queryPush = new Parse.Query(Parse.Installation);
+                    queryPush.equalTo('user', organizationOwner);
+                    Parse.Push.send({
+                        where: queryPush,
+                        data: {
+                            alert: "Поступила заявка на вступление участника " + member.get("firstName") + " " + member.get("lastName"),
+                            name: "Заявка на вступление участника"
+                        }
+                    }, { useMasterKey: true })
+                        .then(function() {
+                            console.log("successful push");
+                        }, function(error) {
+                            console.log(error);
+                        });
                 })
                 .catch(function(error) {
                     console.error(error);
@@ -70,6 +86,33 @@ Parse.Cloud.afterSave("Supplier", (request) => {
         suppliers.add(supplier);
         user.save(null, { useMasterKey: true });
     }
+
+    // send PNs to admins
+    var query = new Parse.Query(Parse.Role);
+    query.equalTo("name", "administrator");
+    query.first({ useMasterKey: true }).then((role) => {
+        var relation = role.getUsers();
+        relation.query().find({ useMasterKey: true }).then((users) => {
+            var query = new Parse.Query(Parse.Installation);
+            query.containedIn('user', users);
+            Parse.Push.send({
+                where: query,
+                data: {
+                    alert: "Поступила заявка на вступление в клуб поставщика " + supplier.get("name"),
+                    name: "Заявка на вступление поставщика"
+                }
+            }, { useMasterKey: true })
+                .then(function() {
+                    console.log("successful push");
+                }, function(error) {
+                    console.log(error);
+                });
+        }).catch(function(error) {
+            console.log(error);
+        });
+    }).catch(function(error) {
+        console.error(error);
+    });
 });
 
 //Organization
@@ -82,7 +125,7 @@ Parse.Cloud.beforeSave("Organization", (request) => {
     }
     //only 'onReview' state allowed on create
     organization.set("statusString", "onReview");
-    organization.set("owner", user)
+    organization.set("owner", user);
 
     //set ACLs
     var acl = new Parse.ACL();
@@ -111,6 +154,7 @@ Parse.Cloud.afterSave("Organization", (request) => {
     }
 
     // send PNs to admins
+
     var query = new Parse.Query(Parse.Role);
     query.equalTo("name", "administrator");
     query.first({ useMasterKey: true }).then((role) => {
@@ -121,7 +165,7 @@ Parse.Cloud.afterSave("Organization", (request) => {
                 Parse.Push.send({
                     where: query,
                     data: {
-                        alert: "Поступила заявка на вступление в клуб организации",
+                        alert: "Поступила заявка на вступление в клуб организации " + organization.get("name"),
                         name: "Заявка на вступление организации"
                     }
                 }, { useMasterKey: true })
