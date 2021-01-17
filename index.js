@@ -45,6 +45,9 @@ var api = new ParseServer({
     },
     appName: "ProfitClub",
     push: {
+        android: {
+            apiKey: 'AAAAcPRtrp4:APA91bHpzpRUobrlnGMtTf4cpnpEk6-W5q_fEgQmfY1-rpSJA-DT2iR0ujTn2g67bYRAd2M4Fa8r-8wVG_wO9JL7bIhbAHBSTFi2ykz_rp3rYmkvahpuDknFrGph275qOcKZEGwqKHNV'
+        },
         ios: [
             {
                 token: {
