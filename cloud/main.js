@@ -16,7 +16,7 @@ async function isAdmin(user) {
     return userIsAdmin;
 }
 
-function sendPushToAdmins(name, title, body="") {
+function sendPushToAdmins(name, title, body= "", type = "", identifier = "") {
 
     var query = new Parse.Query(Parse.Role);
     query.equalTo("name", "administrator");
@@ -34,6 +34,8 @@ function sendPushToAdmins(name, title, body="") {
                     },
                     name: name,
                     sound: "space.caf",
+                    type: type,
+                    identifier: identifier
                 }
             }, {useMasterKey: true})
                 .then(function () {
@@ -182,9 +184,10 @@ Parse.Cloud.afterSave("Supplier", (request) => {
 
     //send PNs to administrators
     const pushName = "Заявка на вступление поставщика";
-    const pushTitle = "Поступила заявка на вступление в клуб поставщика " + supplier.get("name");
-    //const pushBody =
-    sendPushToAdmins(pushName, pushTitle);
+    const pushTitle = "Поступила заявка на вступление в клуб поставщика "; //+ supplier.get("name");
+    const pushBody = supplier.get("name");
+    const supplierId = supplier.id;
+    sendPushToAdmins(pushName, pushTitle, pushBody, "supplier_created", supplierId);
 
 });
 
@@ -274,7 +277,7 @@ Parse.Cloud.afterSave("Member", (request) => {
 
 Parse.Cloud.afterSave("Action", (request) => {
     var action = request.object;
-    var user = request.user;
+    //var user = request.user;
     if(action.existed()) {
         // quit on update, proceed on create
         return;
@@ -282,7 +285,23 @@ Parse.Cloud.afterSave("Action", (request) => {
 
     //send PNs to administrators
     const pushName = "Заявка на проведение акции";
-    const pushTitle = "Поступила заявка на проведение акции " + action.get("message");
-    //const pushBody =
-    sendPushToAdmins(pushName, pushTitle);
+    const pushTitle = "Заявка на проведение акции ";
+    const pushBody = action.get("message");
+    const actionId = action.id;
+    sendPushToAdmins(pushName, pushTitle, pushBody, "action_created", actionId);
+});
+
+Parse.Cloud.afterSave("CommercialOffer", (request) => {
+    var commercialOffer = request.object;
+    //var user = request.user;
+    if(commercialOffer.existed()) {
+        // quit on update, proceed on create
+        return;
+    }
+
+    //send PNs to administrators
+    const pushName = "Заявка на новое коммерческое предложение";
+    const pushTitle = "Заявка на новое коммерческое предложение ";
+    const pushBody = commercialOffer.get("message");
+    sendPushToAdmins(pushName, pushTitle, pushBody);
 });
