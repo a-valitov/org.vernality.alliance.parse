@@ -62,7 +62,8 @@ Parse.Cloud.define("approveAction", async (request) => {
     //rewrite status of action in database
     const Action = Parse.Object.extend("Action");
     const actionQuery = new Parse.Query(Action);
-    actionQuery.include("supplier")
+    actionQuery.include("supplier");
+    actionQuery.include("user");
 
     actionQuery.get(actionId, { useMasterKey: true })
         .then((action) => {
@@ -71,30 +72,106 @@ Parse.Cloud.define("approveAction", async (request) => {
 
             const actionSupplierName = action.get("supplier").get("name");
 
-            // send PNs to all users except the current one
-            var queryUsers = new Parse.Query(Parse.User);
-            queryUsers.notEqualTo("objectId", user.id);
-            Parse.Push.send({
-                where: queryUsers,
-                data: {
-                    alert: {
-                        "title" : "Появилась новая акция от " + actionSupplierName,
-                        "body" : action.get("message") + " " + action.get("descriptionOf"),
-                    },
-                    sound: "space.caf",
-                    name: "Оповещение о новой акции",
-                }
-            }, { useMasterKey: true })
-                .then(function() {
-                    console.log("successful push");
-                }, function(error) {
-                    console.log(error);
-                });
+            // send PN to the action owner
+            var actionOwnerRelation = action.get("user", {useMasterKey: true});
+            actionOwnerRelation.query().first({useMasterKey: true}).then((actionOwner) => {
+                var actionOwnerQuery = new Parse.Query(Parse.Installation);
+                actionOwnerQuery.equalTo('user', actionOwner);
 
-        }, (error) => {
+                Parse.Push.send({
+                    where: actionOwnerQuery,
+                    data: {
+                        alert: {
+                            "title" : "Вашу акцию одобрили!",
+                            "body" : action.get("message") + " " + action.get("descriptionOf"),
+                        },
+                        sound: "space.caf",
+                        name: "Оповещение об одобрении акции",
+                    }
+                }, { useMasterKey: true })
+                    .then(function() {
+                        console.log("successful push");
+                    }, function(error) {
+                        console.log(error);
+                    });
+
+                // send PNs to all users except the action owner
+                var queryUsers = new Parse.Query(Parse.Installation);
+                queryUsers.notEqualTo('user', actionOwner);
+
+                Parse.Push.send({
+                    where: queryUsers,
+                    data: {
+                        alert: {
+                            "title" : "Появилась новая акция от " + actionSupplierName,
+                            "body" : action.get("message") + " " + action.get("descriptionOf"),
+                        },
+                        sound: "space.caf",
+                        name: "Оповещение о новой акции",
+                    }
+                }, { useMasterKey: true })
+                    .then(function() {
+                        console.log("successful push");}, function(error) {
+                            console.log(error);
+                        });
+                }, (error) => {
+                    console.error(error);
+                });
+            })
+            .catch(function (error) {
+                console.error(error);
+            });
+});
+
+Parse.Cloud.define("rejectAction", async (request) => {
+    let user = request.user;
+    let userIsAdmin = await isAdmin(user);
+    if (!userIsAdmin) return;
+
+    let actionId = request.params.actionId;
+
+    //rewrite status of action in database
+    const Action = Parse.Object.extend("Action");
+    const actionQuery = new Parse.Query(Action);
+    actionQuery.include("supplier");
+    actionQuery.include("user");
+
+    actionQuery.get(actionId, { useMasterKey: true })
+        .then((action) => {
+            action.set("statusString", "rejected");
+            action.save(null, { useMasterKey: true });
+
+            const actionSupplierName = action.get("supplier").get("name");
+
+            // send PN to the action owner
+            var actionOwnerRelation = action.get("user", {useMasterKey: true});
+            actionOwnerRelation.query().first({useMasterKey: true}).then((actionOwner) => {
+                var actionOwnerQuery = new Parse.Query(Parse.Installation);
+                actionOwnerQuery.equalTo('user', actionOwner);
+
+                Parse.Push.send({
+                    where: actionOwnerQuery,
+                    data: {
+                        alert: {
+                            "title" : "Вам отказано в проведении акции",
+                            "body" : action.get("message") + " " + action.get("descriptionOf"),
+                        },
+                        sound: "space.caf",
+                        name: "Оповещение об отказе в акции",
+                    }
+                }, { useMasterKey: true })
+                    .then(function() {
+                        console.log("successful push");
+                    }, function(error) {
+                        console.log(error);
+                    });
+            }, (error) => {
+                console.error(error);
+            });
+        })
+        .catch(function (error) {
             console.error(error);
         });
-
 });
 
 Parse.Cloud.define("applyAsAMemberToOrganization", async (request) => {
