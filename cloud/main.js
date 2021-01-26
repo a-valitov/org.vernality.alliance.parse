@@ -16,8 +16,53 @@ async function isAdmin(user) {
     return userIsAdmin;
 }
 
-function sendPushToAdmins(name, title, body= "", type = "", identifier = "") {
+//sends PN to a single user with certain message
+function sendPushTo(user, title, body, name) {
+    const query = new Parse.Query(Parse.Installation);
+    query.equalTo('user', user);
 
+    Parse.Push.send({
+        where: query,
+        data: {
+            alert: {
+                "title": title,
+                "body": body,
+            },
+            sound: "space.caf",
+            name: name,
+        }
+    }, {useMasterKey: true})
+        .then(function () {
+            console.log("successful push");
+        }, function (error) {
+            console.log(error);
+        });
+}
+
+//sends PNs to all users except current one with certain message
+function sendPushToAllExcept(user, title, body, name) {
+    var queryUsers = new Parse.Query(Parse.Installation);
+    queryUsers.notEqualTo('user', user);
+
+    Parse.Push.send({
+        where: queryUsers,
+        data: {
+            alert: {
+                "title": title,
+                "body": body,
+            },
+            sound: "space.caf",
+            name: name,
+        }
+    }, {useMasterKey: true})
+        .then(function () {
+            console.log("successful push");
+        }, function (error) {
+            console.log(error);
+        });
+}
+
+function sendPushToAdmins(name, title, body= "", type = "", identifier = "") {
     var query = new Parse.Query(Parse.Role);
     query.equalTo("name", "administrator");
     query.first({useMasterKey: true}).then((role) => {
@@ -51,127 +96,105 @@ function sendPushToAdmins(name, title, body= "", type = "", identifier = "") {
     });
 }
 
-
-Parse.Cloud.define("approveAction", async (request) => {
-    let user = request.user;
-    let userIsAdmin = await isAdmin(user);
-    if (!userIsAdmin) return;
-
-    let actionId = request.params.actionId;
-
-    //rewrite status of action in database
+async function getActionById(actionId) {
     const Action = Parse.Object.extend("Action");
     const actionQuery = new Parse.Query(Action);
     actionQuery.include("supplier");
     actionQuery.include("user");
+    const action = await actionQuery.get(actionId, {useMasterKey: true});
+    return action;
+}
 
-    actionQuery.get(actionId, { useMasterKey: true })
-        .then((action) => {
-            action.set("statusString", "approved");
-            action.save(null, { useMasterKey: true });
 
-            const actionSupplierName = action.get("supplier").get("name");
+Parse.Cloud.define("approveAction", async (request) => {
+    // check if the user has enough rights
+    let user = request.user;
+    let userIsAdmin = await isAdmin(user);
+    if (!userIsAdmin) return;
 
-            // send PN to the action owner
-            var actionOwnerRelation = action.get("user", {useMasterKey: true});
-            actionOwnerRelation.query().first({useMasterKey: true}).then((actionOwner) => {
-                var actionOwnerQuery = new Parse.Query(Parse.Installation);
-                actionOwnerQuery.equalTo('user', actionOwner);
+    // rewrite status of commercial offer in database
+    const action = await getActionById(request.params.actionId);
+    action.set("statusString", "approved");
+    action.save(null, { useMasterKey: true });
 
-                Parse.Push.send({
-                    where: actionOwnerQuery,
-                    data: {
-                        alert: {
-                            "title" : "Вашу акцию одобрили!",
-                            "body" : action.get("message") + " " + action.get("descriptionOf"),
-                        },
-                        sound: "space.caf",
-                        name: "Оповещение об одобрении акции",
-                    }
-                }, { useMasterKey: true })
-                    .then(function() {
-                        console.log("successful push");
-                    }, function(error) {
-                        console.log(error);
-                    });
+    // sending PNs
+    const actionOwnerRelation = action.get("user", {useMasterKey: true});
+    const actionOwner = await actionOwnerRelation.query().first({useMasterKey: true});
+    sendPushTo(actionOwner, "Вашу акцию одобрили!",
+        action.get("message"), "Оповещение об одобрении акции");
 
-                // send PNs to all users except the action owner
-                var queryUsers = new Parse.Query(Parse.Installation);
-                queryUsers.notEqualTo('user', actionOwner);
-
-                Parse.Push.send({
-                    where: queryUsers,
-                    data: {
-                        alert: {
-                            "title" : "Появилась новая акция от " + actionSupplierName,
-                            "body" : action.get("message") + " " + action.get("descriptionOf"),
-                        },
-                        sound: "space.caf",
-                        name: "Оповещение о новой акции",
-                    }
-                }, { useMasterKey: true })
-                    .then(function() {
-                        console.log("successful push");}, function(error) {
-                            console.log(error);
-                        });
-                }, (error) => {
-                    console.error(error);
-                });
-            })
-            .catch(function (error) {
-                console.error(error);
-            });
+    const actionOwnerName = action.get("supplier").get("name");
+    sendPushToAllExcept(actionOwner, "Появилась новая акция от " + actionOwnerName,
+        action.get("message"), "Оповещение о новой акции");
 });
 
 Parse.Cloud.define("rejectAction", async (request) => {
+    // check if the user has enough rights
     let user = request.user;
     let userIsAdmin = await isAdmin(user);
     if (!userIsAdmin) return;
 
-    let actionId = request.params.actionId;
+    // rewrite status of commercial offer in database
+    const action = await getActionById(request.params.actionId);
+    action.set("statusString", "rejected");
+    action.save(null, { useMasterKey: true });
 
-    //rewrite status of action in database
-    const Action = Parse.Object.extend("Action");
-    const actionQuery = new Parse.Query(Action);
-    actionQuery.include("supplier");
-    actionQuery.include("user");
+    // sending PNs
+    const actionOwnerRelation = action.get("user", {useMasterKey: true});
+    const actionOwner = await actionOwnerRelation.query().first({useMasterKey: true});
+    sendPushTo(actionOwner, "Ваша акция не одобрена",
+        action.get("message"), "Оповещение об отказе в акции");
+});
 
-    actionQuery.get(actionId, { useMasterKey: true })
-        .then((action) => {
-            action.set("statusString", "rejected");
-            action.save(null, { useMasterKey: true });
 
-            const actionSupplierName = action.get("supplier").get("name");
+async function getCommercialOfferById(commercialOfferId) {
+    const CommercialOffer = Parse.Object.extend("CommercialOffer");
+    const commercialOfferQuery = new Parse.Query(CommercialOffer);
+    commercialOfferQuery.include("supplier");
+    commercialOfferQuery.include("user");
+    const commercialOffer = await commercialOfferQuery.get(commercialOfferId, {useMasterKey: true});
+    return commercialOffer;
+}
 
-            // send PN to the action owner
-            var actionOwnerRelation = action.get("user", {useMasterKey: true});
-            actionOwnerRelation.query().first({useMasterKey: true}).then((actionOwner) => {
-                var actionOwnerQuery = new Parse.Query(Parse.Installation);
-                actionOwnerQuery.equalTo('user', actionOwner);
+Parse.Cloud.define("approveCommercialOffer", async (request) => {
+    // check if the user has enough rights
+    let user = request.user;
+    let userIsAdmin = await isAdmin(user);
+    if (!userIsAdmin) return;
 
-                Parse.Push.send({
-                    where: actionOwnerQuery,
-                    data: {
-                        alert: {
-                            "title" : "Вам отказано в проведении акции",
-                            "body" : action.get("message") + " " + action.get("descriptionOf"),
-                        },
-                        sound: "space.caf",
-                        name: "Оповещение об отказе в акции",
-                    }
-                }, { useMasterKey: true })
-                    .then(function() {
-                        console.log("successful push");
-                    }, function(error) {
-                        console.log(error);
-                    });
-            }, (error) => {
-                console.error(error);
-            });
-        })
-        .catch(function (error) {
-            console.error(error);
-        });
+    // rewrite status of commercial offer in database
+    const commercialOffer = await getCommercialOfferById(request.params.commercialOfferId);
+    commercialOffer.set("statusString", "approved");
+    commercialOffer.save(null, { useMasterKey: true });
+
+    // sending PNs
+    const commercialOfferOwnerRelation = commercialOffer.get("user", {useMasterKey: true});
+    const commercialOfferOwner = await commercialOfferOwnerRelation.query().first({useMasterKey: true});
+    sendPushTo(commercialOfferOwner, "Ваше коммерческое предложение одобрили!",
+        commercialOffer.get("message"), "Оповещение об одобрении коммерческого предложения");
+
+    const commercialOfferSupplierName = commercialOffer.get("supplier").get("name");
+    sendPushToAllExcept(commercialOfferOwner, "Появилось новое предложение от " + commercialOfferSupplierName,
+        commercialOffer.get("message"), "Оповещение о новом коммерческом предложении");
+});
+
+
+Parse.Cloud.define("rejectCommercialOffer", async (request) => {
+    // check if the user has enough rights
+    let user = request.user;
+    let userIsAdmin = await isAdmin(user);
+    if (!userIsAdmin) return;
+
+    // rewrite status of commercial offer in database
+    const commercialOffer = await getCommercialOfferById(request.params.commercialOfferId);
+    commercialOffer.set("statusString", "rejected");
+    commercialOffer.save(null, { useMasterKey: true });
+
+    // send PN
+    const commercialOfferOwnerRelation = commercialOffer.get("user", {useMasterKey: true});
+    const commercialOfferOwner = await commercialOfferOwnerRelation.query().first({useMasterKey: true});
+    sendPushTo(commercialOfferOwner, "Ваше коммерческое предложение не одобрено",
+        commercialOffer.get("message"), "Оповещение об отказе в коммерческом предложении");
 });
 
 Parse.Cloud.define("applyAsAMemberToOrganization", async (request) => {
