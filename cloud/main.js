@@ -105,6 +105,21 @@ async function getActionById(actionId) {
     return action;
 }
 
+async function getOrganizationById(organizationId) {
+    const Organization = Parse.Object.extend("Organization");
+    const organizationQuery = new Parse.Query(Organization);
+    const organization = await organizationQuery.get(organizationId, {useMasterKey: true});
+    return organization;
+}
+
+async function getMemberById(memberId) {
+    const Member = Parse.Object.extend("Member");
+    const memberQuery = new Parse.Query(Member);
+    //actionQuery.include("supplier");
+    //actionQuery.include("user");
+    return await memberQuery.get(memberId, {useMasterKey: true});
+}
+
 
 Parse.Cloud.define("approveAction", async (request) => {
     // check if the user has enough rights
@@ -220,21 +235,11 @@ Parse.Cloud.define("applyAsAMemberToOrganization", async (request) => {
                     acl.setWriteAccess(organizationOwner.id, true);
                     member.setACL(acl);
 
-                    // send PNs to owner
-                    var queryPush = new Parse.Query(Parse.Installation);
-                    queryPush.equalTo('user', organizationOwner);
-                    Parse.Push.send({
-                        where: queryPush,
-                        data: {
-                            alert: "Поступила заявка на вступление участника " + member.get("firstName") + " " + member.get("lastName"),
-                            name: "Заявка на вступление участника"
-                        }
-                    }, { useMasterKey: true })
-                        .then(function() {
-                            console.log("successful push");
-                        }, function(error) {
-                            console.log(error);
-                        });
+                    // send PN to owner
+                    sendPushTo(organizationOwner, "Новый участник",
+                        member.get("firstName") + " " + member.get("lastName") + " хочет вступить в вашу организацию",
+                        "Заявка на вступление участника");
+
                 })
                 .catch(function(error) {
                     console.error(error);
@@ -242,6 +247,40 @@ Parse.Cloud.define("applyAsAMemberToOrganization", async (request) => {
         }).catch(function(error) {
             console.error(error);
         });
+});
+
+Parse.Cloud.define("approveMember", async (request) => {
+    // TODO: check if the user has enough rights
+
+    // rewrite status of member in database
+    const member = await getMemberById(request.params.memberId);
+    member.set("statusString", "approved");
+    member.save(null, { useMasterKey: true });
+
+    // sending PN
+    const memberUser = member.get("owner", {useMasterKey: true});
+    const organizationId = member.get("organization", {useMasterKey: true}).id;
+    const organization = await getOrganizationById(organizationId) //organizationRelation.query().first({useMasterKey: true});
+
+    sendPushTo(memberUser, "Ваше участие одобрили!",
+        "Компания " + organization.get("name") + " подтвердила, что вы её сотрудник.", "Оповещение об одобрении участника");
+});
+
+Parse.Cloud.define("rejectMember", async (request) => {
+    // TODO: check if the user has enough rights
+
+    // rewrite status of member in database
+    const member = await getMemberById(request.params.memberId);
+    member.set("statusString", "rejected");
+    member.save(null, { useMasterKey: true });
+
+    // sending PN
+    const memberUser = member.get("owner", {useMasterKey: true});
+    const organizationId = member.get("organization", {useMasterKey: true}).id;
+    const organization = await getOrganizationById(organizationId) //organizationRelation.query().first({useMasterKey: true});
+
+    sendPushTo(memberUser, "Вам отказано в участии",
+        "Компания " + organization.get("name") + " не подтвердила, что вы её сотрудник.", "Оповещение об отказе участнику");
 });
 
 //Supplier
