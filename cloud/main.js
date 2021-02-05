@@ -112,6 +112,13 @@ async function getOrganizationById(organizationId) {
     return organization;
 }
 
+async function getSupplierById(supplierId) {
+    const Supplier = Parse.Object.extend("Supplier");
+    const supplierQuery = new Parse.Query(Supplier);
+    const supplier = await supplierQuery.get(supplierId, {useMasterKey: true});
+    return supplier;
+}
+
 async function getMemberById(memberId) {
     const Member = Parse.Object.extend("Member");
     const memberQuery = new Parse.Query(Member);
@@ -210,6 +217,90 @@ Parse.Cloud.define("rejectCommercialOffer", async (request) => {
     const commercialOfferOwner = await commercialOfferOwnerRelation.query().first({useMasterKey: true});
     sendPushTo(commercialOfferOwner, "Ваше коммерческое предложение не одобрено",
         commercialOffer.get("message"), "Оповещение об отказе в коммерческом предложении");
+});
+
+
+Parse.Cloud.define("approveOrganization", async (request) => {
+    // check if the user has enough rights
+    let user = request.user;
+    let userIsAdmin = await isAdmin(user);
+    if (!userIsAdmin) return;
+
+    // rewrite status of Organization in database
+    const organization = await getOrganizationById(request.params.organizationId);
+    organization.set("statusString", "approved");
+    organization.save(null, { useMasterKey: true });
+
+    // sending PN
+    const organizationOwner = organization.get("owner", {useMasterKey: true});
+    sendPushTo(organizationOwner, "Вашу организацию одобрили!",
+        organization.get("name") + " теперь участник клуба.", "Оповещение об одобрении организации");
+});
+
+Parse.Cloud.define("rejectOrganization", async (request) => {
+    // check if the user has enough rights
+    let user = request.user;
+    let userIsAdmin = await isAdmin(user);
+    if (!userIsAdmin) return;
+
+    // rewrite status of Organization in database
+    const organization = await getOrganizationById(request.params.organizationId);
+    organization.set("statusString", "rejected");
+    organization.save(null, { useMasterKey: true });
+
+    // sending PN
+    const organizationOwner = organization.get("owner", {useMasterKey: true});
+    sendPushTo(organizationOwner, "Вашей организации отказано в регистрации",
+        organization.get("name") + " не может стать участником клуба.", "Оповещение об отказе для организации");
+});
+
+Parse.Cloud.define("approveSupplier", async (request) => {
+    // check if the user has enough rights
+    let userIsAdmin = await isAdmin(request.user);
+    if (!userIsAdmin) return;
+
+    // rewrite status of Organization in database
+    const supplier = await getSupplierById(request.params.supplierId);
+    supplier.set("statusString", "approved");
+    supplier.save(null, { useMasterKey: true });
+
+    // sending PN
+    const supplierOwner = supplier.get("owner", {useMasterKey: true});
+    sendPushTo(supplierOwner, "Вашего поставщика одобрили!",
+        supplier.get("name") + " теперь участник клуба.", "Оповещение об одобрении поставщика");
+});
+
+Parse.Cloud.define("rejectSupplier", async (request) => {
+    // check if the user has enough rights
+    let userIsAdmin = await isAdmin(request.user);
+    if (!userIsAdmin) return;
+
+    // rewrite status of Organization in database
+    const supplier = await getSupplierById(request.params.supplierId);
+    supplier.set("statusString", "rejected");
+    supplier.save(null, { useMasterKey: true });
+
+    // sending PN
+    const supplierOwner = supplier.get("owner", {useMasterKey: true});
+    sendPushTo(supplierOwner, "Вашего поставщика не одобрили",
+        supplier.get("name") + " не может стать участником клуба.", "Оповещение об одобрении поставщика");
+});
+
+Parse.Cloud.define("rejectOrganization", async (request) => {
+    // check if the user has enough rights
+    let user = request.user;
+    let userIsAdmin = await isAdmin(user);
+    if (!userIsAdmin) return;
+
+    // rewrite status of Organization in database
+    const organization = await getOrganizationById(request.params.organizationId);
+    organization.set("statusString", "rejected");
+    organization.save(null, { useMasterKey: true });
+
+    // sending PN
+    const organizationOwner = organization.get("owner", {useMasterKey: true});
+    sendPushTo(organizationOwner, "Вашей организации отказано в регистрации",
+        organization.get("name"), "Оповещение об отказе для организации");
 });
 
 Parse.Cloud.define("applyAsAMemberToOrganization", async (request) => {
