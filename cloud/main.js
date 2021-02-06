@@ -144,6 +144,12 @@ Parse.Cloud.define("approveAction", async (request) => {
     // rewrite status of commercial offer in database
     const action = await getActionById(request.params.actionId);
     action.set("statusString", "approved");
+
+    // allow organizations to read action
+    var acl = action.getACL();
+    acl.setRoleReadAccess("organization", true);
+    action.setACL(acl);
+
     action.save(null, { useMasterKey: true });
 
     // sending PNs
