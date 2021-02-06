@@ -284,6 +284,9 @@ Parse.Cloud.define("approveSupplier", async (request) => {
     const supplierOwner = supplier.get("owner", {useMasterKey: true});
     sendPushTo(supplierOwner, "Вашего поставщика одобрили!",
         supplier.get("name") + " теперь участник клуба.", "Оповещение об одобрении поставщика");
+
+    // give supplier owner user supplier role privileges
+    addUserToRole(supplierOwner, "supplier");
 });
 
 Parse.Cloud.define("rejectSupplier", async (request) => {
