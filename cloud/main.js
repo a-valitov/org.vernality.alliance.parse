@@ -145,9 +145,10 @@ Parse.Cloud.define("approveAction", async (request) => {
     const action = await getActionById(request.params.actionId);
     action.set("statusString", "approved");
 
-    // allow organizations to read action
+    // allow to read action for members and organizations
     var acl = action.getACL();
     acl.setRoleReadAccess("organization", true);
+    acl.setRoleReadAccess("member", true);
     action.setACL(acl);
 
     action.save(null, { useMasterKey: true });
@@ -200,6 +201,12 @@ Parse.Cloud.define("approveCommercialOffer", async (request) => {
     // rewrite status of commercial offer in database
     const commercialOffer = await getCommercialOfferById(request.params.commercialOfferId);
     commercialOffer.set("statusString", "approved");
+
+    // allow to read action for members and organizations
+    var acl = commercialOffer.getACL();
+    acl.setRoleReadAccess("organization", true);
+    commercialOffer.setACL(acl);
+
     commercialOffer.save(null, { useMasterKey: true });
 
     // sending PNs
@@ -242,6 +249,9 @@ Parse.Cloud.define("approveOrganization", async (request) => {
     // rewrite status of Organization in database
     const organization = await getOrganizationById(request.params.organizationId);
     organization.set("statusString", "approved");
+    var acl = organization.getACL();
+    acl.setRoleReadAccess("registered", true);
+    organization.setACL(acl);
     organization.save(null, { useMasterKey: true });
 
     // sending PN
@@ -374,6 +384,9 @@ Parse.Cloud.define("approveMember", async (request) => {
 
     sendPushTo(memberUser, "Ваше участие одобрили!",
         "Компания " + organization.get("name") + " подтвердила, что вы её сотрудник.", "Оповещение об одобрении участника");
+
+    // give owner user member role privileges
+    addUserToRole(memberUser, "member");
 });
 
 Parse.Cloud.define("rejectMember", async (request) => {
@@ -553,4 +566,9 @@ Parse.Cloud.afterSave("CommercialOffer", (request) => {
     const pushTitle = "Заявка на новое коммерческое предложение ";
     const pushBody = commercialOffer.get("message");
     sendPushToAdmins(pushName, pushTitle, pushBody);
+});
+
+Parse.Cloud.afterSave(Parse.User, (request) => {
+    var user = request.object;
+    addUserToRole(user, "registered");
 });
