@@ -127,6 +127,13 @@ async function getMemberById(memberId) {
     return await memberQuery.get(memberId, {useMasterKey: true});
 }
 
+async function addUserToRole(user, roleName) {
+    var query = new Parse.Query(Parse.Role);
+    query.equalTo("name", roleName);
+    const role = await query.first({useMasterKey: true});
+    role.getUsers().add(user, {useMasterKey: true});
+    role.save(null, {useMasterKey: true});
+}
 
 Parse.Cloud.define("approveAction", async (request) => {
     // check if the user has enough rights
@@ -235,6 +242,9 @@ Parse.Cloud.define("approveOrganization", async (request) => {
     const organizationOwner = organization.get("owner", {useMasterKey: true});
     sendPushTo(organizationOwner, "Вашу организацию одобрили!",
         organization.get("name") + " теперь участник клуба.", "Оповещение об одобрении организации");
+
+    // give organization owner user organization role privileges
+    addUserToRole(organizationOwner, "organization");
 });
 
 Parse.Cloud.define("rejectOrganization", async (request) => {
