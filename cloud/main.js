@@ -127,6 +127,13 @@ async function getMemberById(memberId) {
     return await memberQuery.get(memberId, {useMasterKey: true});
 }
 
+async function addUserToRole(user, roleName) {
+    var query = new Parse.Query(Parse.Role);
+    query.equalTo("name", roleName);
+    const role = await query.first({useMasterKey: true});
+    role.getUsers().add(user, {useMasterKey: true});
+    role.save(null, {useMasterKey: true});
+}
 
 Parse.Cloud.define("approveAction", async (request) => {
     // check if the user has enough rights
@@ -137,6 +144,13 @@ Parse.Cloud.define("approveAction", async (request) => {
     // rewrite status of commercial offer in database
     const action = await getActionById(request.params.actionId);
     action.set("statusString", "approved");
+
+    // allow to read action for members and organizations
+    var acl = action.getACL();
+    acl.setRoleReadAccess("organization", true);
+    acl.setRoleReadAccess("member", true);
+    action.setACL(acl);
+
     action.save(null, { useMasterKey: true });
 
     // sending PNs
@@ -187,6 +201,12 @@ Parse.Cloud.define("approveCommercialOffer", async (request) => {
     // rewrite status of commercial offer in database
     const commercialOffer = await getCommercialOfferById(request.params.commercialOfferId);
     commercialOffer.set("statusString", "approved");
+
+    // allow to read action for members and organizations
+    var acl = commercialOffer.getACL();
+    acl.setRoleReadAccess("organization", true);
+    commercialOffer.setACL(acl);
+
     commercialOffer.save(null, { useMasterKey: true });
 
     // sending PNs
@@ -229,12 +249,18 @@ Parse.Cloud.define("approveOrganization", async (request) => {
     // rewrite status of Organization in database
     const organization = await getOrganizationById(request.params.organizationId);
     organization.set("statusString", "approved");
+    var acl = organization.getACL();
+    acl.setRoleReadAccess("registered", true);
+    organization.setACL(acl);
     organization.save(null, { useMasterKey: true });
 
     // sending PN
     const organizationOwner = organization.get("owner", {useMasterKey: true});
     sendPushTo(organizationOwner, "Вашу организацию одобрили!",
         organization.get("name") + " теперь участник клуба.", "Оповещение об одобрении организации");
+
+    // give organization owner user organization role privileges
+    addUserToRole(organizationOwner, "organization");
 });
 
 Parse.Cloud.define("rejectOrganization", async (request) => {
@@ -268,6 +294,9 @@ Parse.Cloud.define("approveSupplier", async (request) => {
     const supplierOwner = supplier.get("owner", {useMasterKey: true});
     sendPushTo(supplierOwner, "Вашего поставщика одобрили!",
         supplier.get("name") + " теперь участник клуба.", "Оповещение об одобрении поставщика");
+
+    // give supplier owner user supplier role privileges
+    addUserToRole(supplierOwner, "supplier");
 });
 
 Parse.Cloud.define("rejectSupplier", async (request) => {
@@ -355,6 +384,9 @@ Parse.Cloud.define("approveMember", async (request) => {
 
     sendPushTo(memberUser, "Ваше участие одобрили!",
         "Компания " + organization.get("name") + " подтвердила, что вы её сотрудник.", "Оповещение об одобрении участника");
+
+    // give owner user member role privileges
+    addUserToRole(memberUser, "member");
 });
 
 Parse.Cloud.define("rejectMember", async (request) => {
@@ -534,4 +566,9 @@ Parse.Cloud.afterSave("CommercialOffer", (request) => {
     const pushTitle = "Заявка на новое коммерческое предложение ";
     const pushBody = commercialOffer.get("message");
     sendPushToAdmins(pushName, pushTitle, pushBody);
+});
+
+Parse.Cloud.afterSave(Parse.User, (request) => {
+    var user = request.object;
+    addUserToRole(user, "registered");
 });
