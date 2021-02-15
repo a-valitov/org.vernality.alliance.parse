@@ -13,7 +13,7 @@
     "kerberos": "^1.1.3",
     "parse": "~1.8.0",
     "parse-dashboard": "^2.1.0",
-    "parse-server": "*",
+    "parse-server": "^4.5.0",
     "parse-server-generic-email-adapter": "^0.0.4"
   },
   "scripts": {
