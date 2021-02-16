@@ -17,9 +17,9 @@ var credentials = {};
 
 if(!DEVELOPMENT) {
     // Certificate
-    const privateKey = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/privkey.pem', 'utf8');
-    const certificate = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/cert.pem', 'utf8');
-    const ca = fs.readFileSync('/etc/letsencrypt/live/alliance.vernality.net/chain.pem', 'utf8');
+    const privateKey = fs.readFileSync('/etc/letsencrypt/live/profitclub.vernality.org/privkey.pem', 'utf8');
+    const certificate = fs.readFileSync('/etc/letsencrypt/live/profitclub.vernality.org/cert.pem', 'utf8');
+    const ca = fs.readFileSync('/etc/letsencrypt/live/profitclub.vernality.org/chain.pem', 'utf8');
 
     credentials = {
         key: privateKey,
@@ -37,7 +37,7 @@ var api = new ParseServer({
     cloud: process.env.CLOUD_CODE_MAIN || __dirname + '/cloud/main.js',
     appId: process.env.APP_ID || 'org.vernality.alliance',
     masterKey: process.env.MASTER_KEY || 'n2vw8wfMsrm4jDSuLMuspiiseBwOIq18rsq6uQ5p', //Add your master key here. Keep it secret!
-    serverURL: process.env.SERVER_URL || 'https://alliance.vernality.net/parse',  // Don't forget to change to https if needed
+    serverURL: process.env.SERVER_URL || 'https://profitclub.vernality.org/parse',  // Don't forget to change to https if needed
     publicServerURL: process.env.SERVER_URL || 'https://alliance.vernality.net/parse',
     clientKey: 'hWlREY7dvWb7sLpCVfZrReWNKPHh4uJT',
     liveQuery: {
@@ -91,7 +91,7 @@ if(DEVELOPMENT) {
 var dashboard = new ParseDashboard({
     "apps": [
         {
-            "serverURL": process.env.SERVER_URL || "https://alliance.vernality.net:1337/parse",
+            "serverURL": process.env.SERVER_URL || "https://profitclub.vernality.org:1337/parse",
             "appId": "org.vernality.alliance",
             "masterKey": "n2vw8wfMsrm4jDSuLMuspiiseBwOIq18rsq6uQ5p",
             "appName": "Alliance"

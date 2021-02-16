@@ -315,23 +315,6 @@ Parse.Cloud.define("rejectSupplier", async (request) => {
         supplier.get("name") + " не может стать участником клуба.", "Оповещение об одобрении поставщика");
 });
 
-Parse.Cloud.define("rejectOrganization", async (request) => {
-    // check if the user has enough rights
-    let user = request.user;
-    let userIsAdmin = await isAdmin(user);
-    if (!userIsAdmin) return;
-
-    // rewrite status of Organization in database
-    const organization = await getOrganizationById(request.params.organizationId);
-    organization.set("statusString", "rejected");
-    organization.save(null, { useMasterKey: true });
-
-    // sending PN
-    const organizationOwner = organization.get("owner", {useMasterKey: true});
-    sendPushTo(organizationOwner, "Вашей организации отказано в регистрации",
-        organization.get("name"), "Оповещение об отказе для организации");
-});
-
 Parse.Cloud.define("applyAsAMemberToOrganization", async (request) => {
     let organizationId = request.params.organizationId;
     let memberId = request.params.memberId;
