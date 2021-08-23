@@ -95,7 +95,9 @@ if(DEVELOPMENT) {
 var dashboard = new ParseDashboard({
     "apps": [
         {
-            "serverURL": process.env.SERVER_URL || "https://profitclub.vernality.org:1337/parse",
+            // Денис Рева: исправление -- URL не должен (!) включать порт. т.е. правильно вот так:
+            "serverURL": process.env.SERVER_URL || "https://profitclub.vernality.org/parse",
+            // вот так не заработает: https://profitclub.vernality.org:1337/parse
             "appId": "org.vernality.alliance",
             "masterKey": "n2vw8wfMsrm4jDSuLMuspiiseBwOIq18rsq6uQ5p",
             "appName": "Alliance"
