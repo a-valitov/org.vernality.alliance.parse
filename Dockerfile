@@ -1,14 +1,14 @@
-FROM node:10-alpine3.11
+FROM node:10-stretch
 
 RUN mkdir parse
 
 ADD . /parse
 WORKDIR /parse
-RUN npm ci
+RUN npm install
 
 ENV APP_ID org.vernality.alliance
 ENV MASTER_KEY n2vw8wfMsrm4jDSuLMuspiiseBwOIq18rsq6uQ5p
-ENV DATABASE_URI http://del.l:1337/parse
+ENV DATABASE_URI mongodb://localhost:27017/alliance
 
 # Optional (default : 'parse/cloud/main.js')
 # ENV CLOUD_CODE_MAIN cloudCodePath

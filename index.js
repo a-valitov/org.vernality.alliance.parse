@@ -17,9 +17,13 @@ var credentials = {};
 
 if(!DEVELOPMENT) {
     // Certificate
-    const privateKey = fs.readFileSync('/etc/letsencrypt/live/profitclub.vernality.org/privkey.pem', 'utf8');
+    /*const privateKey = fs.readFileSync('/etc/letsencrypt/live/profitclub.vernality.org/privkey.pem', 'utf8');
     const certificate = fs.readFileSync('/etc/letsencrypt/live/profitclub.vernality.org/cert.pem', 'utf8');
-    const ca = fs.readFileSync('/etc/letsencrypt/live/profitclub.vernality.org/chain.pem', 'utf8');
+    const ca = fs.readFileSync('/etc/letsencrypt/live/profitclub.vernality.org/chain.pem', 'utf8');*/
+    // Docker build -- Denis Reva
+    const privateKey = fs.readFileSync('/privkey.pem', 'utf8');
+    const certificate = fs.readFileSync('/cert.pem', 'utf8');
+    const ca = fs.readFileSync('/chain.pem', 'utf8');
 
     credentials = {
         key: privateKey,
